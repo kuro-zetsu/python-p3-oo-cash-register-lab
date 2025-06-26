@@ -2,49 +2,60 @@
 
 class CashRegister:
 
-  def __init__(self, discount = 0, title = None, price = 0, quantity = 0):
+  def __init__(self, discount = 0):
     self.discount = discount
-    self.total = 0
+    self.total = 0.0
     self.items = []
-    self.title = title
-    self.price = price
-    self.quantity = quantity
     self.last_item = []
-    self.last_price = 0
+    self.last_price = 0.0
     self.prices = []
-    self.last_no_of_items = 0
     self.items_tracker = []
 
   @property
-  def price(self):
-    return self._price
+  def discount(self):
+    return self._discount
   
-  @price.setter
-  def price(self, price):
-    if isinstance(price, (int, float)):
-      self._price = f"{price:.2f}"
+  @discount.setter
+  def discount(self, new_discount):
+    if isinstance(new_discount, (int, float)) and new_discount >= 0:
+      self._discount = new_discount
     else:
-      print("The price needs to be a number.")
+      raise ValueError("Discount must be a positive number.")
 
 
   def add_item(self, title, price, quantity = 1):
-    self.last_item = [title for _ in range(quantity)]
-    self.items.extend(self.last_item)
-    self.items_tracker.append(self.last_item)
+    if not all(isinstance(x, (int, float)) for x in (price, quantity)):
+      raise ValueError("Price and quantity must be numbers.")
+    
+    if not all((y > 0) for y in (price, quantity)):
+      raise ValueError("Price and quantity must be positive.")
+    
     self.last_price = round(float(price), 2) * quantity
     self.total += self.last_price
     self.prices.append(self.last_price)
   
+    if not isinstance(title, str) or len(title) == 0:
+      raise ValueError("Title must be a non-empty string.")
+    
+    self.last_item = [title for _ in range(quantity)]
+    self.items.extend(self.last_item)
+    self.items_tracker.append(self.last_item)
+    
   def apply_discount(self):
-    if self.discount != 0:
-      self.total *= (100 - self.discount) / 100
+    if self._discount != 0:
+      self.total *= (100 - self._discount) / 100
       print(f"After the discount, the total comes to ${int(self.total)}.")
     else:
       print("There is no discount to apply.")
 
   def void_last_transaction(self):
-    if self.items != []:
-      last_item = self.items_tracker.pop()
-      last_amount = self.prices.pop()
-      del self.items[-len(last_item):]
-      self.total -= last_amount
+    if not self.items_tracker:
+      print("No transaction to void.")
+      return
+    
+    last_item = self.items_tracker.pop()
+    last_amount = self.prices.pop()
+    del self.items[-len(last_item):]
+    self.total = round(self.total - last_amount, 2)
+
+
